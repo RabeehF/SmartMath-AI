@@ -162,4 +162,4 @@ if user_input:
             st.warning("⚠️ Could not solve this problem. Try a different question.")
 
 st.markdown("---")
-st.caption("Made by Muhammed Rabeeh — College Science Exhibition 2025 ✨")
+st.caption("Made by Muhammed Rabeeh Fysal and Alex Jacob Shaiju — Science Exhibition 2025 ✨")
