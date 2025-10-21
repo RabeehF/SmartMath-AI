@@ -95,4 +95,4 @@ if user_input:
     st.info(explanation)
 
 st.markdown("---")
-st.caption("Made by **Muhammed Rabeeh** — College Science Exhibition 2025 ✨")
+st.caption("Made by **Muhammed Rabeeh** — MES Science Exhibition 2025 ✨")
