@@ -1,140 +1,165 @@
 import streamlit as st
 import sympy as sp
-from sympy.parsing.sympy_parser import (
-    parse_expr,
-    standard_transformations,
-    implicit_multiplication_application,
-    convert_xor,
-)
-from sympy import SympifyError
 
-# ...existing code...
 st.set_page_config(page_title="SmartMath AI", page_icon="🤖", layout="centered")
-
 st.title("🤖 SmartMath AI")
-st.subheader("Universal Math Solver – from Kindergarten to Masters 🎓")
+st.subheader("Offline Math Solver — Equations, Word Problems, and Puzzles (Class 10)")
 
+# Input
 user_input = st.text_input("🧮 Enter your math question:")
-level = st.selectbox(
-    "🎓 Select Explanation Level:",
-    ["Kindergarten", "School", "College / Masters"]
-)
+level = st.selectbox("🎓 Explanation Level:", ["Kindergarten", "School", "College / Masters"])
 
-# parsing config (allows implicit multiplication like 2x and ^ as power)
-TRANSFORMATIONS = standard_transformations + (
-    implicit_multiplication_application,
-    convert_xor,
-)
+# --------------------- PRELOADED 25 CLASS 10 QUESTIONS ---------------------
+word_problems = {
+    "eight 8": {
+        "solution": "888 + 88 + 8 + 8 + 8 = 1000",
+        "explanation": "Step-by-step:\n1. Start with 888\n2. Add 88 → 976\n3. Add 8 → 984\n4. Add 8 → 992\n5. Add 8 → 1000"
+    },
+    "sum of first 10 natural numbers": {
+        "solution": "1 + 2 + ... + 10 = 55",
+        "explanation": "Use formula n(n+1)/2 → 10*11/2 = 55"
+    },
+    "pythagorean triplet": {
+        "solution": "3² + 4² = 5²",
+        "explanation": "Check 3*3 + 4*4 = 9+16=25=5*5"
+    },
+    "area of triangle": {
+        "solution": "Area = 1/2 * base * height",
+        "explanation": "Multiply base and height and divide by 2"
+    },
+    "simple interest": {
+        "solution": "SI = P * R * T / 100",
+        "explanation": "Multiply principal, rate, and time, then divide by 100"
+    },
+    "perimeter of square": {
+        "solution": "Perimeter = 4 * side",
+        "explanation": "Add all sides: 4 times the length of one side"
+    },
+    "average of numbers": {
+        "solution": "Average = sum of numbers / count",
+        "explanation": "Add numbers and divide by total count"
+    },
+    "factorial of 5": {
+        "solution": "5! = 120",
+        "explanation": "5*4*3*2*1 = 120"
+    },
+    "sum of angles in triangle": {
+        "solution": "180 degrees",
+        "explanation": "Sum of interior angles of a triangle = 180"
+    },
+    "ratio problem": {
+        "solution": "Divide quantities in given ratio",
+        "explanation": "Use formula: part = (ratio * total)/sum of ratio parts"
+    },
+    "average marks problem": {
+        "solution": "Average = Total marks / Number of students",
+        "explanation": "Add marks and divide by number of students"
+    },
+    "work and time problem": {
+        "solution": "Work = Rate * Time",
+        "explanation": "Multiply rate of work by time to get total work"
+    },
+    "speed distance time": {
+        "solution": "Speed = Distance / Time",
+        "explanation": "Divide distance by time"
+    },
+    "compound interest": {
+        "solution": "A = P*(1 + R/100)^T",
+        "explanation": "Use formula to calculate compound interest"
+    },
+    "sum of squares": {
+        "solution": "1²+2²+...+n² = n(n+1)(2n+1)/6",
+        "explanation": "Use the formula for sum of squares"
+    },
+    "quadratic equation": {
+        "solution": "x² - 5x + 6 = 0 → x = 2, 3",
+        "explanation": "Factorize the equation: (x-2)(x-3)=0"
+    },
+    "simultaneous equations": {
+        "solution": "x + y = 5, x - y = 1 → x=3, y=2",
+        "explanation": "Solve two equations using elimination or substitution"
+    },
+    "profit and loss": {
+        "solution": "Profit = Selling Price - Cost Price",
+        "explanation": "Subtract cost from selling price"
+    },
+    "perimeter of rectangle": {
+        "solution": "2*(length + breadth)",
+        "explanation": "Add length and breadth, multiply by 2"
+    },
+    "area of circle": {
+        "solution": "π * radius²",
+        "explanation": "Multiply pi by radius squared"
+    },
+    "circumference of circle": {
+        "solution": "2 * π * radius",
+        "explanation": "Multiply 2, pi, and radius"
+    },
+    "simple riddle": {
+        "solution": "9 + 1 = 10 using digits",
+        "explanation": "Arrange numbers to make correct sum"
+    },
+    "percentage problem": {
+        "solution": "Percentage = (part/total)*100",
+        "explanation": "Divide part by total and multiply by 100"
+    },
+    "volume of cube": {
+        "solution": "side³",
+        "explanation": "Multiply side length by itself 3 times"
+    },
+    "surface area of cube": {
+        "solution": "6 * side²",
+        "explanation": "6 faces, each with area side²"
+    },
+    "speed ratio problem": {
+        "solution": "Speed ratio = Distance1/Time1 : Distance2/Time2",
+        "explanation": "Calculate each speed and form ratio"
+    }
+}
 
-def safe_parse(expr_str):
-    if not expr_str or len(expr_str) > 400:
-        raise ValueError("Expression empty or too long.")
-    return parse_expr(expr_str, transformations=TRANSFORMATIONS, evaluate=True)
+def solve_word_problem(question):
+    q = question.lower()
+    for key in word_problems:
+        if key in q:
+            return word_problems[key]["solution"], word_problems[key]["explanation"]
+    return None, None
 
-def solve_math(expression):
+# --------------------- SOLVE EQUATIONS & EXPRESSIONS ---------------------
+def solve_math(expr):
     try:
-        # detect equation
-        if "=" in expression:
-            lhs_str, rhs_str = map(str.strip, expression.split("=", 1))
-            lhs = safe_parse(lhs_str)
-            rhs = safe_parse(rhs_str)
-            eq = sp.Eq(lhs, rhs)
-            # choose symbol(s) to solve for (prefer single symbol)
-            syms = sorted(eq.free_symbols, key=lambda s: s.name)
-            if not syms:
-                # maybe numeric equality -> evaluate truth
-                return f"✅ Result: {sp.simplify(eq)}"
-            var = syms[0]
-            sol = sp.solve(eq, var)
-            return {"type": "equation", "var": var, "solution": sol, "eq": eq}
-        # detect integration
-        elif expression.lower().startswith(("integrate ", "∫")) or "integrate(" in expression.lower():
-            # allow syntax: integrate(x**2, x) or integrate x^2 wrt x
-            # try to split by comma if present
-            if "," in expression:
-                f_str, var_str = map(str.strip, expression.split(",", 1))
-                f = safe_parse(f_str.replace("integrate", "", 1))
-                var = safe_parse(var_str)
-            else:
-                # assume integrate <f> wrt x
-                f = safe_parse(expression.replace("integrate", "", 1))
-                var = list(f.free_symbols)
-                var = var[0] if var else sp.Symbol("x")
-            antider = sp.integrate(f, var)
-            return {"type": "integral", "integrand": f, "var": var, "result": antider}
-        # detect differentiation
-        elif expression.lower().startswith(("differentiate ", "derivative ")) or "d/d" in expression.lower() or "diff(" in expression.lower():
-            # common forms: diff(x**2, x) or differentiate x^2 wrt x
-            if "," in expression:
-                f_str, var_str = map(str.strip, expression.split(",", 1))
-                f = safe_parse(f_str.replace("diff", "").replace("differentiate", ""))
-                var = safe_parse(var_str)
-            else:
-                f = safe_parse(expression.replace("diff", "").replace("differentiate", "").replace("derivative", ""))
-                syms = list(f.free_symbols)
-                var = syms[0] if syms else sp.Symbol("x")
-            deriv = sp.diff(f, var)
-            return {"type": "derivative", "func": f, "var": var, "result": deriv}
-        else:
-            # try to simplify / evaluate expression
-            expr = safe_parse(expression)
-            simplified = sp.simplify(expr)
-            # numeric evaluation if purely numeric
-            if simplified.is_Number:
-                return {"type": "number", "result": float(simplified)}
-            return {"type": "simplify", "expr": expr, "result": simplified}
-    except (SympifyError, ValueError) as e:
-        return {"type": "error", "message": f"Could not parse expression: {e}"}
-    except Exception as e:
-        return {"type": "error", "message": f"Computation error: {e}"}
+        simplified = sp.simplify(expr)
+        return f"✅ Simplified Expression: {simplified}"
+    except Exception:
+        try:
+            lhs, rhs = expr.split("=")
+            x = sp.symbols('x')
+            sol = sp.solve(sp.Eq(sp.sympify(lhs), sp.sympify(rhs)), x)
+            return f"✅ Solution: x = {sol}"
+        except Exception:
+            return None
 
-def explain_solution(original, result_obj, level):
-    base = ""
-    if result_obj["type"] == "equation":
-        base = "We isolate the chosen variable and solve the resulting polynomial/transcendental equation."
-    elif result_obj["type"] == "integral":
-        base = "Find an antiderivative such that its derivative gives the integrand."
-    elif result_obj["type"] == "derivative":
-        base = "Apply power and chain/product/quotient rules to compute the rate of change."
-    elif result_obj["type"] == "simplify":
-        base = "We apply algebraic identities and simplification rules."
-    elif result_obj["type"] == "number":
-        base = "This is a numeric result after simplification."
-    else:
-        base = result_obj.get("message", "Unable to produce an explanation.")
-
+# --------------------- EXPLANATION ---------------------
+def explain_solution(expr, level):
     if level == "Kindergarten":
-        return "🧸 Math is like balancing a seesaw — we move things so both sides are fair!"
-    if level == "School":
-        return "📘 " + base
-    return "🎓 " + base
+        return "🧸 Easy Explain: Imagine a balance! Move numbers to keep it equal."
+    elif level == "School":
+        return "📘 School Explain: Apply simple math rules step by step."
+    else:
+        return "🎓 College Explain: Use algebraic or calculus rules systematically."
 
+# --------------------- MAIN ---------------------
 if user_input:
-    res = solve_math(user_input)
-    explanation = explain_solution(user_input, res, level)
-
-    if res["type"] == "error":
-        st.error(res["message"])
-    elif res["type"] == "equation":
-        st.success(f"✅ Solution for {res['var']}: {res['solution']}")
-        st.latex(sp.latex(res["eq"]))
-        st.info(explanation)
-    elif res["type"] == "integral":
-        st.success("✅ Integral computed")
-        st.latex(r"\int " + sp.latex(res["integrand"]) + r"\,d" + sp.latex(res["var"]) + " = " + sp.latex(res["result"]))
-        st.info(explanation)
-    elif res["type"] == "derivative":
-        st.success("✅ Derivative computed")
-        st.latex("d/d" + sp.latex(res["var"]) + " " + sp.latex(res["func"]) + " = " + sp.latex(res["result"]))
-        st.info(explanation)
-    elif res["type"] == "simplify":
-        st.success("✅ Simplified Expression:")
-        st.latex(sp.latex(res["result"]))
-        st.info(explanation)
-    elif res["type"] == "number":
-        st.success(f"✅ Result: {res['result']}")
-        st.info(explanation)
+    sol_text, expl_text = solve_word_problem(user_input)
+    if sol_text:
+        st.success(sol_text)
+        st.info(expl_text)
+    else:
+        sol = solve_math(user_input)
+        if sol:
+            st.success(sol)
+            st.info(explain_solution(user_input, level))
+        else:
+            st.warning("⚠️ Could not solve this problem. Try a different question.")
 
 st.markdown("---")
-st.caption("Made by Muhammed Rabeeh — Science Exhibition 2025 ✨")
-# ...existing code...
+st.caption("Made by Muhammed Rabeeh — College Science Exhibition 2025 ✨")
